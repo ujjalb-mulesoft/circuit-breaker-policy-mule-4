@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns="http://www.mulesoft.org/schema/mule/core"
+xmlns:os="http://www.mulesoft.org/schema/mule/os"
+xmlns:http="http://www.mulesoft.org/schema/mule/http"
+xmlns:http-policy="http://www.mulesoft.org/schema/mule/http-policy"
+xmlns:http-transform="http://www.mulesoft.org/schema/mule/http-policy-transform"
+xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core
+http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http
+http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/http-policy
+http://www.mulesoft.org/schema/mule/http-policy/current/mule-http-policy.xsd
+http://www.mulesoft.org/schema/mule/http-policy-transform
+http://www.mulesoft.org/schema/mule/http-policy-transform/current/mule-http-policy-transform.xsd
+http://www.mulesoft.org/schema/mule/os
+http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+
+ <!-- Object Store configuration -->
+ <os:object-store name="cbstore"
+ persistent="true"
+ entryTtl="1"
+ entryTtlUnit="HOURS"/>
+
+
+    <http-policy:proxy name="{{{policyId}}}-custom-policy">
+        <http-policy:source>
+           <try>
+               <!-- Checking Cache for OPEN| HALF-OPEN stored value -->
+               <os:retrieve key="circuit" target="circuit" objectStore="cbstore"/>
+               <set-payload value='#["Circuit breaker validation.  " ++ vars.circuit]' />
+               <error-handler>
+                   <on-error-continue type="OS:KEY_NOT_FOUND" logException="false">
+                      <try>  
+                        <http-policy:execute-next/>
+                        <os:remove key="circuit" objectStore="cbstore"/>
+                        <error-handler>
+                          <on-error-propagate type="HTTP:CONNECTIVITY" logException="false">
+                                <!-- Trip the Circuit -->
+                                <set-variable value='#[{
+                                          "timeout": {{{timeout}}},
+                                          "failureThreshold": {{{failureThreshold}}},
+                                          "retryPeriod": {{{retryPeriod}}},
+                                          "state": "OPEN"
+                                         }]' variableName="circuit"/>
+                                <os:store key="circuit" objectStore="cbstore">
+                                   <os:value>
+                                       #[vars.circuit]
+                                   </os:value>
+                                </os:store>
+                                <set-payload value='#["Circuit breaker validation.  " ++ vars.circuit]' />
+                          </on-error-propagate> 
+                          <on-error-continue type="OS:KEY_NOT_FOUND" logException="false">
+                          </on-error-continue>    
+                        </error-handler>    
+                      </try>    
+                   </on-error-continue>
+               </error-handler>
+           </try>
+        </http-policy:source>
+    </http-policy:proxy>
+</mule>
