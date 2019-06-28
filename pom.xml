@@ -6,7 +6,7 @@
 
     <groupId>9033ff23-884a-4352-b75b-14fc8237b2c4</groupId>
     <artifactId>circuit-breaker-mule-4</artifactId>
-    <version>6.0.0-SNAPSHOT</version>
+    <version>9.0.3-SNAPSHOT</version>
 
     <name>circuit-breaker-mule-4</name>
     <description>A custom policy to implement a lightweight Circuit Breaker pattern</description>
@@ -61,12 +61,12 @@
             <version>1.1.1</version>
             <classifier>mule-plugin</classifier>
         </dependency>
-        <!-- <dependency>
+        <dependency>
            <groupId>com.mulesoft.anypoint</groupId>
            <artifactId>mule-http-policy-transform-extension</artifactId>
            <version>1.0.0</version>
            <classifier>mule-plugin</classifier>
-       </dependency> -->
+       </dependency>
     </dependencies>
 
     <distributionManagement>
